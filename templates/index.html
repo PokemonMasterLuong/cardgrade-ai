@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CardGrade AI — Instant PSA-Style Card Grading</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #0a0a0a;
+      --dark: #111;
+      --gray: #666;
+      --light-gray: #f7fafc;
+      --border: #e8e8e8;
+      --blue: #004370;
+      --blue-light: #0066aa;
+      --white: #fff;
+      --radius: 12px;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    body {
+      font-family: var(--font);
+      color: var(--black);
+      background: var(--white);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      height: 60px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+    }
+    .nav-logo {
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--black);
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 14px;
+      color: var(--gray);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .nav-links a:hover { color: var(--black); }
+    .nav-cta {
+      background: var(--black);
+      color: var(--white) !important;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+    }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 100px 24px 80px;
+      background: linear-gradient(180deg, #f0f6ff 0%, #ffffff 100%);
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #e8f0fe;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 100px;
+      margin-bottom: 28px;
+    }
+    .hero h1 {
+      font-size: clamp(40px, 6vw, 72px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      color: var(--black);
+      max-width: 720px;
+      margin: 0 auto 24px;
+    }
+    .hero p {
+      font-size: 18px;
+      color: var(--gray);
+      max-width: 480px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+    .hero-btn {
+      display: inline-block;
+      background: var(--black);
+      color: var(--white);
+      font-size: 15px;
+      font-weight: 700;
+      padding: 14px 32px;
+      border-radius: 10px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .hero-btn:hover { opacity: 0.85; }
+
+    /* LOGOS / TRUST */
+    .trust {
+      text-align: center;
+      padding: 32px 24px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .trust p {
+      font-size: 13px;
+      color: #aaa;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .trust-logos {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      flex-wrap: wrap;
+      opacity: 0.35;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    /* SECTION */
+    section { padding: 96px 24px; }
+    .section-inner { max-width: 960px; margin: 0 auto; }
+    .section-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--blue);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      color: var(--black);
+      max-width: 600px;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 17px;
+      color: var(--gray);
+      max-width: 520px;
+      line-height: 1.65;
+    }
+
+    /* GRADER CARD */
+    .grader-wrap {
+      background: var(--light-gray);
+      border-radius: 20px;
+      padding: 48px;
+      max-width: 760px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+    }
+
+    /* UPLOAD ZONE */
+    .upload-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 580px) { .upload-grid { grid-template-columns: 1fr; } }
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 32px 16px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--white);
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--blue);
+      background: #f0f6ff;
+    }
+    .upload-zone.has-file {
+      border-color: #1a7a1a;
+      background: #f0fff0;
+    }
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .upload-icon {
+      width: 44px;
+      height: 44px;
+      background: #e8f0fe;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      font-size: 20px;
+    }
+    .upload-zone.has-file .upload-icon { background: #d4edda; }
+    .upload-zone h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--black);
+      margin-bottom: 4px;
+    }
+    .upload-zone p {
+      font-size: 12px;
+      color: var(--gray);
+    }
+    .upload-required {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--white);
+      background: #cc2200;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .upload-zone.has-file .upload-required {
+      background: #1a7a1a;
+    }
+
+    /* PREVIEW */
+    .preview-wrap {
+      display: none;
+      margin-top: 12px;
+      text-align: center;
+    }
+    .preview-img {
+      max-height: 160px;
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .preview-name {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--gray);
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* FORM */
+    .form-group {
+      margin-top: 20px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--black);
+      margin-bottom: 8px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: var(--font);
+      color: var(--black);
+      background: var(--white);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: var(--blue); }
+    .form-group input::placeholder { color: #bbb; }
+
+    .submit-btn {
+      display: block;
+      width: 100%;
+      margin-top: 24px;
+      padding: 15px;
+      background: var(--black);
+      color: var(--white);
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: opacity 0.15s;
+    }
+    .submit-btn:hover:not(:disabled) { opacity: 0.85; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* RESULT */
+    #result-section {
+      display: none;
+      margin-top: 40px;
+    }
+    .result-box {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+    }
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .grade-badge {
+      width: 64px;
+      height: 64px;
+      background: var(--black);
+      color: var(--white);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .grade-badge .psa { font-size: 9px; font-weight: 700; opacity: 0.7; letter-spacing: 1px; }
+    .grade-badge .grade-num { font-size: 24px; font-weight: 900; line-height: 1; }
+    .result-title h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--black);
+      margin-bottom: 4px;
+    }
+    .result-title p { font-size: 13px; color: var(--gray); }
+
+    #result-text {
+      font-size: 14px;
+      line-height: 1.8;
+      color: #333;
+      white-space: pre-wrap;
+      font-family: var(--font);
+    }
+
+    /* Loading */
+    .loading-bar {
+      height: 3px;
+      background: linear-gradient(90deg, var(--blue), #66aaff, var(--blue));
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 2px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .loading-bar.active { display: block; }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* HOW IT WORKS */
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      margin-top: 56px;
+    }
+    @media (max-width: 700px) { .how-grid { grid-template-columns: 1fr; } }
+    .how-card {
+      padding: 32px;
+      background: var(--light-gray);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .how-num {
+      width: 36px;
+      height: 36px;
+      background: var(--black);
+      color: var(--white);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 20px;
+    }
+    .how-card h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--black);
+    }
+    .how-card p {
+      font-size: 14px;
+      color: var(--gray);
+      line-height: 1.6;
+    }
+
+    /* PRICING */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 680px;
+      margin: 56px auto 0;
+    }
+    @media (max-width: 600px) { .pricing-grid { grid-template-columns: 1fr; } }
+    .pricing-card {
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      background: var(--white);
+    }
+    .pricing-card.featured {
+      border-color: var(--black);
+      background: var(--black);
+      color: var(--white);
+    }
+    .pricing-tier {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      opacity: 0.6;
+    }
+    .pricing-price {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      margin-bottom: 4px;
+    }
+    .pricing-sub { font-size: 13px; opacity: 0.5; margin-bottom: 24px; }
+    .pricing-btn {
+      display: block;
+      width: 100%;
+      padding: 11px;
+      text-align: center;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 2px solid;
+      text-decoration: none;
+      font-family: var(--font);
+      transition: opacity 0.15s;
+    }
+    .pricing-card:not(.featured) .pricing-btn {
+      border-color: var(--black);
+      color: var(--black);
+      background: transparent;
+    }
+    .pricing-card.featured .pricing-btn {
+      border-color: var(--white);
+      color: var(--black);
+      background: var(--white);
+    }
+    .pricing-btn:hover { opacity: 0.75; }
+    .pricing-features { margin-top: 24px; list-style: none; }
+    .pricing-features li {
+      font-size: 13px;
+      padding: 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.75;
+    }
+    .pricing-features li::before { content: "✓"; font-weight: 700; opacity: 1; }
+
+    /* CTA SECTION */
+    .cta-section {
+      background: var(--black);
+      color: var(--white);
+      text-align: center;
+      padding: 100px 24px;
+    }
+    .cta-section h2 {
+      font-size: clamp(28px, 4vw, 52px);
+      font-weight: 900;
+      letter-spacing: -2px;
+      margin-bottom: 16px;
+      line-height: 1.05;
+    }
+    .cta-section p {
+      font-size: 17px;
+      opacity: 0.6;
+      margin-bottom: 36px;
+    }
+    .cta-btn {
+      display: inline-block;
+      background: var(--white);
+      color: var(--black);
+      font-size: 15px;
+      font-weight: 700;
+      padding: 14px 32px;
+      border-radius: 10px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .cta-btn:hover { opacity: 0.85; }
+
+    /* FOOTER */
+    footer {
+      padding: 32px 48px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--gray);
+    }
+    footer a { color: var(--gray); text-decoration: none; }
+    footer a:hover { color: var(--black); }
+
+    /* ERROR / SUCCESS */
+    .error-msg {
+      background: #fff0f0;
+      border: 1px solid #ffcccc;
+      color: #cc0000;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      margin-top: 16px;
+      display: none;
+    }
+    .success-msg {
+      background: #f0fff4;
+      border: 1px solid #b2dfdb;
+      color: #1a7a1a;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      margin-top: 16px;
+      display: none;
+    }
+
+    /* AUTH MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      margin: 16px;
+      position: relative;
+    }
+    .modal h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+    .modal p.sub { font-size: 14px; color: var(--gray); margin-bottom: 24px; }
+    .modal-close {
+      position: absolute;
+      top: 16px; right: 20px;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--gray);
+      background: none;
+      border: none;
+      line-height: 1;
+    }
+    .modal-switch { margin-top: 20px; text-align: center; font-size: 13px; color: var(--gray); }
+    .modal-switch a { color: var(--blue); cursor: pointer; text-decoration: underline; }
+
+    /* NAV user area */
+    .nav-user { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+    .nav-user-email { color: var(--gray); font-weight: 500; }
+    .nav-logout { background: none; border: 1.5px solid var(--border); padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); }
+    .nav-logout:hover { border-color: #aaa; }
+  </style>
+</head>
+<body>
+
+  <!-- AUTH MODALS -->
+  <div class="modal-overlay" id="modal-signup">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('modal-signup')">✕</button>
+      <h2>Create account</h2>
+      <p class="sub">Sign up to start grading your cards.</p>
+      <div class="form-group" style="margin-top:0;">
+        <label>Email</label>
+        <input type="email" id="signup-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label>Password <span style="font-weight:400;color:#aaa">(min 8 characters)</span></label>
+        <input type="password" id="signup-password" placeholder="••••••••" />
+      </div>
+      <div class="error-msg" id="signup-error"></div>
+      <div class="success-msg" id="signup-success"></div>
+      <button class="submit-btn" id="signup-btn" onclick="doSignup()" style="margin-top:20px;">Create account →</button>
+      <div class="modal-switch">Already have an account? <a onclick="switchModal('modal-signup','modal-login')">Log in</a></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-login">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('modal-login')">✕</button>
+      <h2>Log in</h2>
+      <p class="sub">Welcome back.</p>
+      <div class="form-group" style="margin-top:0;">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" />
+      </div>
+      <div class="error-msg" id="login-error"></div>
+      <button class="submit-btn" id="login-btn" onclick="doLogin()" style="margin-top:20px;">Log in →</button>
+      <div class="modal-switch">No account yet? <a onclick="switchModal('modal-login','modal-signup')">Sign up free</a></div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="nav-logo">CardGrade AI</a>
+    <ul class="nav-links">
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+    </ul>
+    <div class="nav-user" id="nav-user-area">
+      {% if user_email %}
+        <span class="nav-user-email">{{ user_email }}</span>
+        <button class="nav-logout" onclick="doLogout()">Log out</button>
+      {% else %}
+        <a href="#" onclick="openModal('modal-login')" style="font-size:14px;color:var(--gray);font-weight:500;text-decoration:none;">Log in</a>
+        <a href="#" onclick="openModal('modal-signup')" class="nav-cta" style="color:var(--white);text-decoration:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;background:var(--black);">Sign up free</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badge">⚡ Powered by Claude AI</div>
+    <h1>Get your card<br>pre-graded instantly</h1>
+    <p>Upload any trading card photo and get a detailed PSA-style grade in seconds — before you send it in.</p>
+    <a href="#grade-now" class="hero-btn">Grade your card free →</a>
+  </div>
+
+  <!-- TRUST -->
+  <div class="trust">
+    <p>Grades cards from</p>
+    <div class="trust-logos">
+      <span>Pokémon</span>
+      <span>Baseball</span>
+      <span>Basketball</span>
+      <span>Football</span>
+      <span>Magic: The Gathering</span>
+      <span>Yu-Gi-Oh!</span>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works" style="background: var(--white);">
+    <div class="section-inner">
+      <div class="section-label">How it works</div>
+      <h2 class="section-title">Three steps to know your card's grade</h2>
+      <p class="section-sub">Our AI analyzes the same criteria PSA graders use — centering, corners, edges, and surface.</p>
+      <div class="how-grid">
+        <div class="how-card">
+          <div class="how-num">1</div>
+          <h4>Upload your card</h4>
+          <p>Take a clear photo of the front (and back if possible). JPG, PNG, or WebP accepted.</p>
+        </div>
+        <div class="how-card">
+          <div class="how-num">2</div>
+          <h4>AI analyzes it</h4>
+          <p>Claude examines centering, corner wear, edge condition, and surface quality in real time.</p>
+        </div>
+        <div class="how-card">
+          <div class="how-num">3</div>
+          <h4>Get your report</h4>
+          <p>Receive a full PSA-style grade with sub-grades and notes on every flaw found.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GRADER -->
+  <section id="grade-now" style="background: var(--light-gray);">
+    <div class="section-inner">
+      <div style="text-align:center; margin-bottom: 48px;">
+        <div class="section-label" style="text-align:center;">AI Grader</div>
+        <h2 class="section-title" style="max-width:100%; margin: 0 auto 12px;">Grade your card now</h2>
+        <p class="section-sub" style="margin: 0 auto;">Upload a photo and get your instant PSA-style pre-grade report.</p>
+      </div>
+
+      <div class="grader-wrap">
+
+        {% if not user_email %}
+        <div id="login-wall" style="text-align:center;padding:32px 0;">
+          <div style="font-size:40px;margin-bottom:16px;">🔒</div>
+          <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;">Sign in to grade your card</h3>
+          <p style="font-size:14px;color:var(--gray);margin-bottom:24px;">Create a free account or log in to get started.</p>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <button onclick="openModal('modal-signup')" class="submit-btn" style="width:auto;padding:12px 28px;">Sign up free →</button>
+            <button onclick="openModal('modal-login')" style="padding:12px 28px;border-radius:10px;border:1.5px solid var(--border);background:transparent;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);">Log in</button>
+          </div>
+        </div>
+        {% else %}
+
+        {% if not is_pro %}
+        <div id="scan-counter" style="display:flex;align-items:center;justify-content:space-between;background:#fff8e1;border:1px solid #ffe082;border-radius:10px;padding:12px 16px;margin-bottom:20px;">
+          <span style="font-size:13px;font-weight:600;color:#7a5c00;">
+            {% if scans_remaining == 0 %}
+              No scans remaining today
+            {% else %}
+              {{ scans_remaining }} of 5 free scans remaining today
+            {% endif %}
+          </span>
+          <span style="font-size:12px;color:#7a5c00;font-weight:600;">Pro — Coming Soon</span>
+        </div>
+        {% else %}
+        <div style="background:#f0fff4;border:1px solid #b2dfdb;border-radius:10px;padding:10px 16px;margin-bottom:20px;font-size:13px;font-weight:600;color:#1a7a1a;">
+          Pro — Unlimited scans
+        </div>
+        {% endif %}
+
+        <form id="grade-form">
+
+          <div class="form-group">
+            <label>Card photos <span style="font-weight:400;color:#cc2200">* Front &amp; back required</span></label>
+            <div class="upload-grid">
+
+              <!-- FRONT -->
+              <div>
+                <div class="upload-zone" id="zone-front">
+                  <input type="file" id="input-front" accept=".jpg,.jpeg,.png,.webp" />
+                  <span class="upload-required">Required</span>
+                  <div class="upload-icon">🃏</div>
+                  <h3>Front of card</h3>
+                  <p>JPG, PNG, WebP</p>
+                </div>
+                <div class="preview-wrap" id="preview-wrap-front">
+                  <img class="preview-img" id="preview-img-front" src="" alt="Front preview" />
+                  <p class="preview-name" id="preview-name-front"></p>
+                </div>
+              </div>
+
+              <!-- BACK -->
+              <div>
+                <div class="upload-zone" id="zone-back">
+                  <input type="file" id="input-back" accept=".jpg,.jpeg,.png,.webp" />
+                  <span class="upload-required">Required</span>
+                  <div class="upload-icon">🔄</div>
+                  <h3>Back of card</h3>
+                  <p>JPG, PNG, WebP</p>
+                </div>
+                <div class="preview-wrap" id="preview-wrap-back">
+                  <img class="preview-img" id="preview-img-back" src="" alt="Back preview" />
+                  <p class="preview-name" id="preview-name-back"></p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="card-description">Card description <span style="font-weight:400;color:#aaa">(optional)</span></label>
+            <input type="text" id="card-description" placeholder="e.g. 1986 Fleer Michael Jordan #57" />
+          </div>
+
+          <div class="error-msg" id="error-msg"></div>
+
+          <button type="submit" class="submit-btn" id="submit-btn" disabled>
+            Grade this card →
+          </button>
+        </form>
+
+        <div id="result-section">
+          <div class="loading-bar" id="loading-bar"></div>
+          <div class="result-box">
+            <div class="result-header">
+              <div class="grade-badge" id="grade-badge">
+                <span class="psa">PSA</span>
+                <span class="grade-num" id="grade-num">—</span>
+              </div>
+              <div class="result-title">
+                <h3>Pre-Grade Report</h3>
+                <p id="result-card-name">Analyzing your card...</p>
+              </div>
+            </div>
+            <pre id="result-text"></pre>
+          </div>
+        </div>
+
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing">
+    <div class="section-inner" style="text-align:center;">
+      <div class="section-label">Pricing</div>
+      <h2 class="section-title" style="max-width:100%; margin: 0 auto 12px;">Simple pricing</h2>
+      <p class="section-sub" style="margin: 0 auto;">Start free, upgrade when you need more.</p>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="pricing-tier">Free</div>
+          <div class="pricing-price">$0</div>
+          <div class="pricing-sub">forever</div>
+          <a href="#grade-now" class="pricing-btn">Get started</a>
+          <ul class="pricing-features">
+            <li>5 card grades / day</li>
+            <li>Full PSA-style report</li>
+            <li>Sub-grades included</li>
+          </ul>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-tier">Pro</div>
+          <div class="pricing-price">$5</div>
+          <div class="pricing-sub">per month</div>
+          <button class="pricing-btn" style="cursor:not-allowed;opacity:0.5;" disabled>Coming Soon</button>
+          <ul class="pricing-features">
+            <li>Unlimited grades</li>
+            <li>Priority AI processing</li>
+            <li>Full PSA-style report</li>
+            <li>Sub-grades included</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-section">
+    <h2>Know your card's<br>value before you send it.</h2>
+    <p>Stop guessing. Get a real grade estimate in seconds.</p>
+    <a href="#grade-now" class="cta-btn">Grade a card now →</a>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <span>© 2026 CardGrade AI</span>
+    <span>Pre-grades are estimates only and not official PSA grades.</span>
+  </footer>
+
+  <script>
+    // --- AUTH MODALS ---
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+      document.body.style.overflow = '';
+    }
+    function switchModal(from, to) { closeModal(from); openModal(to); }
+
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+      m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+    });
+
+    async function doSignup() {
+      const email = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value;
+      const errEl = document.getElementById('signup-error');
+      const okEl  = document.getElementById('signup-success');
+      const btn   = document.getElementById('signup-btn');
+      errEl.style.display = 'none';
+      okEl.style.display = 'none';
+      btn.disabled = true; btn.textContent = 'Creating account...';
+
+      const res = await fetch('/signup', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      btn.disabled = false; btn.textContent = 'Create account →';
+
+      if (data.error) {
+        errEl.textContent = data.error; errEl.style.display = 'block';
+      } else {
+        okEl.textContent = data.message; okEl.style.display = 'block';
+        document.getElementById('signup-password').value = '';
+      }
+    }
+
+    async function doLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errEl = document.getElementById('login-error');
+      const btn   = document.getElementById('login-btn');
+      errEl.style.display = 'none';
+      btn.disabled = true; btn.textContent = 'Logging in...';
+
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        btn.disabled = false; btn.textContent = 'Log in →';
+        errEl.textContent = data.error; errEl.style.display = 'block';
+      } else {
+        window.location.reload();
+      }
+    }
+
+    async function doLogout() {
+      await fetch('/logout', { method: 'POST' });
+      window.location.reload();
+    }
+
+    async function doUpgrade() {
+      {% if not user_email %}
+        openModal('modal-signup');
+        return;
+      {% endif %}
+      const res = await fetch('/upgrade', { method: 'POST' });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Could not start upgrade. Please try again.');
+      }
+    }
+
+    // Allow Enter key in modals
+    ['signup-password', 'signup-email'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') doSignup(); });
+    });
+    ['login-email', 'login-password'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    });
+
+    // --- GRADER (only runs if logged in) ---
+    const inputFront = document.getElementById('input-front');
+    const inputBack  = document.getElementById('input-back');
+    if (inputFront && inputBack) {
+      const zoneFront  = document.getElementById('zone-front');
+      const zoneBack   = document.getElementById('zone-back');
+      const submitBtn  = document.getElementById('submit-btn');
+      const form       = document.getElementById('grade-form');
+      const resultSection  = document.getElementById('result-section');
+      const resultText     = document.getElementById('result-text');
+      const loadingBar     = document.getElementById('loading-bar');
+      const gradeNum       = document.getElementById('grade-num');
+      const resultCardName = document.getElementById('result-card-name');
+      const errorMsg       = document.getElementById('error-msg');
+
+      let frontFile = null, backFile = null;
+
+      function setupZone(zone, input, side) {
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+        zone.addEventListener('drop', e => {
+          e.preventDefault(); zone.classList.remove('dragover');
+          if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0], side);
+        });
+        input.addEventListener('change', () => { if (input.files[0]) handleFile(input.files[0], side); });
+      }
+
+      setupZone(zoneFront, inputFront, 'front');
+      setupZone(zoneBack,  inputBack,  'back');
+
+      function handleFile(file, side) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          document.getElementById(`preview-img-${side}`).src = e.target.result;
+          document.getElementById(`preview-name-${side}`).textContent = file.name;
+          document.getElementById(`preview-wrap-${side}`).style.display = 'block';
+          const zone = document.getElementById(`zone-${side}`);
+          zone.classList.add('has-file');
+          const req = zone.querySelector('.upload-required');
+          if (req) req.textContent = 'Uploaded';
+          if (side === 'front') frontFile = file; else backFile = file;
+          checkReady();
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function checkReady() {
+        submitBtn.disabled = !(frontFile && backFile);
+      }
+
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        errorMsg.style.display = 'none';
+        if (!frontFile) { showError('Please upload the front of the card.'); return; }
+        if (!backFile)  { showError('Please upload the back of the card.'); return; }
+
+        const desc = document.getElementById('card-description').value.trim();
+        resultSection.style.display = 'block';
+        loadingBar.classList.add('active');
+        resultText.textContent = '';
+        gradeNum.textContent = '—';
+        resultCardName.textContent = desc || 'Analyzing your card...';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Analyzing...';
+        resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        const formData = new FormData();
+        formData.append('card_front', frontFile);
+        formData.append('card_back', backFile);
+        formData.append('card_description', desc);
+
+        try {
+          const response = await fetch('/grade', { method: 'POST', body: formData });
+          if (!response.ok) {
+            const err = await response.json();
+            if (response.status === 429) {
+              showError((err.error || 'Daily limit reached.') + ' ');
+              const upgradeLink = document.createElement('a');
+              upgradeLink.textContent = 'Upgrade to Pro →';
+              upgradeLink.href = '#pricing';
+              upgradeLink.style.cssText = 'color:#cc0000;font-weight:700;';
+              errorMsg.appendChild(upgradeLink);
+            } else {
+              showError(err.error || 'Something went wrong.');
+            }
+            return;
+          }
+
+          const reader2 = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '', fullText = '';
+
+          while (true) {
+            const { done, value } = await reader2.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              const data = line.slice(6).trim();
+              if (data === '[DONE]') {
+                loadingBar.classList.remove('active');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Grade this card →';
+                extractGrade(fullText);
+                break;
+              }
+              try {
+                const json = JSON.parse(data);
+                if (json.error) { showError(json.error); return; }
+                if (json.text) { fullText += json.text; resultText.textContent = fullText; }
+              } catch {}
+            }
+          }
+        } catch (err) {
+          showError('Network error. Is the server running?');
+        }
+      });
+
+      function extractGrade(text) {
+        const badge = document.getElementById('grade-badge');
+        const psaLabel = badge.querySelector('.psa');
+
+        // Check for Pristine 10 in the Overall Grade line first
+        if (/overall\s+grade\s*:\s*pristine\s*10/i.test(text)) {
+          gradeNum.textContent = '10';
+          psaLabel.textContent = 'PRISTINE';
+          badge.style.background = 'linear-gradient(135deg, #b8860b, #ffd700)';
+          badge.style.color = '#000';
+          return;
+        }
+
+        // Decimal and whole grades — prioritise the "Overall Grade: X" line
+        const match = text.match(/overall\s+grade\s*:\s*(\d+(?:\.\d+)?)/i)
+                   || text.match(/(?:overall\s+(?:psa\s+)?grade|grade)[:\s]+(?:psa\s+)?(\d+(?:\.\d+)?)/i)
+                   || text.match(/\bPSA\s+(\d+(?:\.\d+)?)\b/i);
+        if (match) {
+          const g = parseFloat(match[1]);
+          if (g >= 1 && g <= 10) {
+            gradeNum.textContent = g % 1 === 0 ? g : g.toFixed(1);
+            psaLabel.textContent = 'GRADE';
+            if (g >= 9.5) badge.style.background = '#1a7a1a';
+            else if (g >= 9)  badge.style.background = '#2a8a2a';
+            else if (g >= 7)  badge.style.background = '#2255aa';
+            else if (g >= 5)  badge.style.background = '#885500';
+            else              badge.style.background = '#aa2222';
+            badge.style.color = '#fff';
+          }
+        }
+      }
+
+function showError(msg) {
+        errorMsg.textContent = msg;
+        errorMsg.style.display = 'block';
+        loadingBar.classList.remove('active');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Grade this card →';
+        resultSection.style.display = 'none';
+      }
+    }
+  </script>
+
+</body>
+</html>

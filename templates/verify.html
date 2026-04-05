@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Email Verification — CardGrade AI</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f7fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+    .card { background: #fff; border-radius: 16px; border: 1px solid #e8e8e8; padding: 48px 40px; max-width: 440px; width: 100%; text-align: center; }
+    .icon { font-size: 48px; margin-bottom: 20px; }
+    h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; }
+    p { color: #666; font-size: 15px; line-height: 1.6; margin-bottom: 28px; }
+    a { display: inline-block; background: #0a0a0a; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; }
+    a:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    {% if status == "success" %}
+      <div class="icon">✅</div>
+      <h1>Email verified!</h1>
+      <p>Your account is confirmed. You can now log in and start grading your cards.</p>
+      <a href="/">Go to CardGrade AI →</a>
+    {% elif status == "expired" %}
+      <div class="icon">⏰</div>
+      <h1>Link expired</h1>
+      <p>This verification link has expired (links are valid for 1 hour). Log in to request a new one.</p>
+      <a href="/">Back to home</a>
+    {% else %}
+      <div class="icon">❌</div>
+      <h1>Invalid link</h1>
+      <p>This verification link is invalid or has already been used.</p>
+      <a href="/">Back to home</a>
+    {% endif %}
+  </div>
+</body>
+</html>
