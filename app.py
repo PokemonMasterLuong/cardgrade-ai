@@ -367,7 +367,7 @@ def grade():
         try:
             client = Portkey(
                 base_url="https://ai-gateway.apps.cloud.rt.nyu.edu/v1",
-                api_key="mgDNpL/zQZIIJxcB2+5phs232hv8",
+                api_key=os.environ.get("PORTKEY_API_KEY", ""),
             )
             user_message = "Please provide a complete PSA-style grading analysis for this trading card. The first image is the front and the second image is the back."
             if card_description:
